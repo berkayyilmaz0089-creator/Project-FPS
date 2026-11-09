@@ -69,6 +69,7 @@ public class PlayerMovement : MonoBehaviour
     private void OnDestroy()
     {
         _gameInput.Disable();
+        _gameInput.Dispose();
     }
 
     private void Update()
@@ -128,11 +129,10 @@ public class PlayerMovement : MonoBehaviour
         if (isGrounded && _velocity.y < 0.0f)
         {
             _velocity.y = -2.0f;
+            return;
         }
-        else
-        {
-            _velocity.y -= gravity * deltaTime;
-        }
+        
+        _velocity.y -= gravity * deltaTime;
     }
 
     private void UpdateJumpTimers(float deltaTime, bool isGrounded)
@@ -149,8 +149,10 @@ public class PlayerMovement : MonoBehaviour
         if (_gameInput.Player.Jump.WasPressedThisFrame())
         {
             _jumpBufferTimer = jumpBufferTime;
+            return;
         }
-        else if (_jumpBufferTimer > 0.0f)
+        
+        if (_jumpBufferTimer > 0.0f)
         {
             _jumpBufferTimer -= deltaTime;
         }
@@ -262,8 +264,11 @@ public class PlayerMovement : MonoBehaviour
                 _currentStamina = 0.0f;
                 _isExhausted = true;
             }
+            
+            return;
         }
-        else if (!sprintHeld && _currentStamina < maxStamina)
+        
+        if (!sprintHeld && _currentStamina < maxStamina)
         {
             _currentStamina += regenRate * deltaTime;
 

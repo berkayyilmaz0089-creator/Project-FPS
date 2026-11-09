@@ -117,14 +117,15 @@ public class PlayerAudio : MonoBehaviour
     private SurfaceAudioData GetSurfaceData()
     {
         RaycastHit hit;
+        Vector3 origin = transform.position + Vector3.up * 0.5f;
 
-        if (Physics.Raycast(transform.position + Vector3.up * 0.5f, Vector3.down, out hit, 2.0f, groundMask))
+        if (Physics.Raycast(origin, Vector3.down, out hit, 2.0f, groundMask))
         {
-            foreach (var surface in taggedAudios)
+            for (int i = 0; i < taggedAudios.Length; i++)
             {
-                if (hit.collider.CompareTag(surface.surfaceTag))
+                if (hit.collider.CompareTag(taggedAudios[i].surfaceTag))
                 {
-                    return surface;
+                    return taggedAudios[i];
                 }
             }
         }

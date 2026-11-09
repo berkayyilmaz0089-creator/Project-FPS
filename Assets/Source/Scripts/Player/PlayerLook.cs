@@ -37,6 +37,7 @@ public class PlayerLook : MonoBehaviour
     private void OnDestroy()
     {
         _gameInput.Disable();
+        _gameInput.Dispose();
     }
 
     private void Update()
