@@ -86,7 +86,6 @@ public class PlayerAudio : MonoBehaviour
         }
 
         _stepTimer += Time.deltaTime;
-
         float currentInterval = GetCurrentInterval(Mathf.Sqrt(currentSpeedSqr));
 
         if (_stepTimer >= currentInterval)
@@ -116,10 +115,9 @@ public class PlayerAudio : MonoBehaviour
 
     private SurfaceAudioData GetSurfaceData()
     {
-        RaycastHit hit;
         Vector3 origin = transform.position + Vector3.up * 0.5f;
 
-        if (Physics.Raycast(origin, Vector3.down, out hit, 2.0f, groundMask))
+        if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, 2.0f, groundMask))
         {
             for (int i = 0; i < taggedAudios.Length; i++)
             {

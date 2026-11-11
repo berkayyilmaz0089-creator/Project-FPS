@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class PlayerLook : MonoBehaviour
+public class PlayerLook : MonoBehaviour, ISaveable
 {
     public enum LookMode
     {
@@ -63,8 +63,7 @@ public class PlayerLook : MonoBehaviour
 
         if (lookDelta.x != 0.0f)
         {
-            float yaw = lookDelta.x * sensitivity;
-            playerBody.Rotate(Vector3.up * yaw);
+            playerBody.Rotate(Vector3.up * (lookDelta.x * sensitivity));
         }
 
         if (lookDelta.y != 0.0f)
@@ -82,5 +81,41 @@ public class PlayerLook : MonoBehaviour
 
             cameraPivot.localRotation = Quaternion.Euler(_pitch, 0.0f, 0.0f);
         }
+    }
+
+    public string GetSaveId()
+    {
+        return "PlayerLook_ID";
+    }
+
+    public string CaptureState()
+    {
+        LookSaveData data = new LookSaveData();
+        data.pitch = _pitch;
+        data.bodyRotationY = playerBody.eulerAngles.y;
+        return JsonUtility.ToJson(data);
+    }
+
+    public void RestoreState(string stateData)
+    {
+        LookSaveData data = JsonUtility.FromJson<LookSaveData>(stateData);
+        
+        _pitch = data.pitch;
+        cameraPivot.localRotation = Quaternion.Euler(_pitch, 0.0f, 0.0f);
+        
+        Vector3 bodyRot = playerBody.eulerAngles;
+        bodyRot.y = data.bodyRotationY;
+        playerBody.eulerAngles = bodyRot;
+    }
+
+    public void OnRestoreComplete() 
+    { 
+    }
+
+    [System.Serializable]
+    private class LookSaveData
+    {
+        public float pitch;
+        public float bodyRotationY;
     }
 }

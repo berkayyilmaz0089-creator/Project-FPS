@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-public class PlayerMovement : MonoBehaviour
+public class PlayerMovement : MonoBehaviour, ISaveable
 {
     [Header("Movement Settings")]
     public float walkSpeed = 4.0f;
@@ -48,6 +48,7 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 _velocity;
     private bool _wasMovingLastFrame = false;
     private bool _wasGrounded = true;
+    private bool _skipNextCrouchRelease = false;
 
     private GameInput _gameInput;
 
@@ -108,12 +109,9 @@ public class PlayerMovement : MonoBehaviour
         HandleCrouch(crouchHeld, deltaTime);
         HandleStamina(sprintHeld, inputDirection, deltaTime);
 
-        if ((controller.collisionFlags & CollisionFlags.Above) != 0)
+        if ((controller.collisionFlags & CollisionFlags.Above) != 0 && _velocity.y > 0.0f)
         {
-            if (_velocity.y > 0.0f)
-            {
-                _velocity.y = 0.0f;
-            }
+            _velocity.y = 0.0f;
         }
 
         if (_velocity.sqrMagnitude > 0.001f)
@@ -197,6 +195,12 @@ public class PlayerMovement : MonoBehaviour
     
     private void HandleCrouch(bool crouchHeld, float deltaTime)
     {
+        if (_skipNextCrouchRelease)
+        {
+            _skipNextCrouchRelease = false;
+            return;
+        }
+
         if (crouchHeld)
         {
             _isCrouching = true;
@@ -251,6 +255,20 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    private void ApplyCrouchInstant()
+    {
+        float targetHeight = _isCrouching ? crouchHeight : normalHeight;
+
+        _currentControllerHeight = targetHeight;
+        controller.height = targetHeight;
+        controller.center = new Vector3(0.0f, targetHeight * 0.5f, 0.0f);
+
+        _currentCameraY = _isCrouching ? (crouchHeight * 0.85f) : _originalCameraY;
+        Vector3 camPos = cameraPivot.localPosition;
+        camPos.y = _currentCameraY;
+        cameraPivot.localPosition = camPos;
+    }
+
     private void HandleStamina(bool sprintHeld, Vector2 inputDirection, float deltaTime)
     {
         bool isMovingForward = inputDirection.y > 0.1f;
@@ -278,5 +296,60 @@ public class PlayerMovement : MonoBehaviour
                 _isExhausted = false;
             }
         }
+    }
+
+    public string GetSaveId()
+    {
+        return "PlayerMovement_ID";
+    }
+
+    public string CaptureState()
+    {
+        MovementSaveData data = new MovementSaveData();
+        data.posX = transform.position.x;
+        data.posY = transform.position.y;
+        data.posZ = transform.position.z;
+        data.velX = _velocity.x;
+        data.velY = _velocity.y;
+        data.velZ = _velocity.z;
+        data.isCrouching = _isCrouching;
+        data.currentStamina = _currentStamina;
+        data.isExhausted = _isExhausted;
+        return JsonUtility.ToJson(data);
+    }
+
+    public void RestoreState(string stateData)
+    {
+        MovementSaveData data = JsonUtility.FromJson<MovementSaveData>(stateData);
+
+        controller.enabled = false;
+        transform.position = new Vector3(data.posX, data.posY, data.posZ);
+        controller.enabled = true;
+
+        _velocity = new Vector3(data.velX, data.velY, data.velZ);
+        _isCrouching = data.isCrouching;
+        _currentStamina = data.currentStamina;
+        _isExhausted = data.isExhausted;
+
+        ApplyCrouchInstant();
+        _skipNextCrouchRelease = true;
+    }
+
+    public void OnRestoreComplete()
+    {
+    }
+
+    [System.Serializable]
+    private class MovementSaveData
+    {
+        public float posX;
+        public float posY;
+        public float posZ;
+        public float velX;
+        public float velY;
+        public float velZ;
+        public bool isCrouching;
+        public float currentStamina;
+        public bool isExhausted;
     }
 }
